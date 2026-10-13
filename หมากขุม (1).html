@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>หมากขุม</title>
+    <style>
+      :root {
+        --bg: #dde5dc;
+        --ink: #1c2924;
+        --mut: #4d5e56;
+        --card: #f2f5ef;
+        --board: #9a6a3a;
+        --board2: #7d5127;
+        --pit: #4a2c14;
+        --pit2: #2c1909;
+        --hl: #2fd0b5;
+        --line: #b9c6bb;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0f1a17;
+          --ink: #e4ece6;
+          --mut: #9db0a6;
+          --card: #172622;
+          --board: #7a5030;
+          --board2: #5c3a1f;
+          --line: #2c4039;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #0f1a17;
+        --ink: #e4ece6;
+        --mut: #9db0a6;
+        --card: #172622;
+        --board: #7a5030;
+        --board2: #5c3a1f;
+        --line: #2c4039;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Noto Sans Thai", "Sarabun", system-ui, sans-serif;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 16px 12px 28px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 2px;
+        letter-spacing: 0.01em;
+      }
+      .sub {
+        color: var(--mut);
+        margin: 0 0 14px;
+        font-size: 0.9rem;
+      }
+      .ctl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        align-items: end;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+      .ctl label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.75rem;
+        color: var(--mut);
+        gap: 3px;
+      }
+      select,
+      input,
+      button {
+        font: inherit;
+        font-size: 0.9rem;
+        color: var(--ink);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 8px;
+      }
+      input {
+        width: 64px;
+      }
+      button {
+        background: var(--hl);
+        color: #06231d;
+        font-weight: 700;
+        border: 0;
+        padding: 7px 16px;
+        cursor: pointer;
+      }
+      button:focus-visible,
+      .pit:focus-visible {
+        outline: 3px solid var(--ink);
+        outline-offset: 2px;
+      }
+      #status {
+        min-height: 2.6em;
+        font-size: 1.02rem;
+        font-weight: 600;
+        margin: 6px 2px 10px;
+      }
+      #status.win {
+        color: var(--hl);
+        font-size: 1.15rem;
+      }
+      .wrap {
+        overflow-x: auto;
+        padding-bottom: 6px;
+      }
+      #board {
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: clamp(4px, 1.2vw, 10px);
+        padding: clamp(8px, 2vw, 16px);
+        border-radius: 22px;
+        background:
+          repeating-linear-gradient(92deg, #0000 0 7px, #0001 7px 8px),
+          linear-gradient(160deg, var(--board), var(--board2));
+        box-shadow:
+          0 10px 26px #0006,
+          inset 0 0 0 2px #0003;
+        font-size: clamp(
+          10px,
+          calc(min(100vw, 980px) / (var(--n) * 2.4)),
+          20px
+        );
+      }
+      .pit,
+      .store {
+        position: relative;
+        background: radial-gradient(circle at 35% 28%, var(--pit), var(--pit2));
+        box-shadow:
+          inset 0 4px 9px #000a,
+          0 1px 0 #fff3;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+        justify-content: center;
+        gap: 2.5%;
+        padding: 12%;
+        color: #fff;
+      }
+      .pit {
+        aspect-ratio: 1;
+        border-radius: 50%;
+        transition: transform 0.12s;
+      }
+      .store {
+        border-radius: 999px;
+        padding: 10% 14%;
+        min-height: 7em;
+      }
+      .pit i,
+      .store i {
+        position: absolute;
+        top: 5%;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-style: normal;
+        font-size: 0.62em;
+        opacity: 0.55;
+      }
+      .pit b,
+      .store b {
+        position: absolute;
+        bottom: 6%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.9em;
+        background: #000a;
+        border-radius: 999px;
+        padding: 0 0.5em;
+        line-height: 1.4;
+      }
+      .store b {
+        font-size: 1.5em;
+        bottom: 8%;
+      }
+      .pit s,
+      .store s {
+        display: block;
+        width: 22%;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        text-decoration: none;
+        background:
+          radial-gradient(circle at 30% 28%, #fffc, #fff0 42%), var(--c);
+        box-shadow: 0 1px 2px #0008;
+      }
+      .store s {
+        width: 18%;
+      }
+      s:nth-child(4n + 1) {
+        --c: #25a99a;
+      }
+      s:nth-child(4n + 2) {
+        --c: #e0a33a;
+      }
+      s:nth-child(4n + 3) {
+        --c: #d9627a;
+      }
+      s:nth-child(4n + 4) {
+        --c: #5a8fe0;
+      }
+      .pit.hl,
+      .store.hl {
+        outline: 3px solid var(--hl);
+        outline-offset: -1px;
+      }
+      .pit.ok {
+        cursor: pointer;
+        outline: 2px dashed var(--hl);
+        outline-offset: 2px;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      #startbtn {
+        margin: 0 0 10px;
+      }
+      .cnt {
+        font-size: 0.88rem;
+        color: var(--mut);
+        margin: 0 2px 10px;
+      }
+      .pit.sel {
+        outline: 3px solid #e0a33a;
+        outline-offset: 2px;
+      }
+      .pit.ok:hover {
+        transform: scale(1.07);
+      }
+      details {
+        margin-top: 16px;
+        color: var(--mut);
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+      summary {
+        cursor: pointer;
+        color: var(--ink);
+        font-weight: 600;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pit {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>หมากขุม</h1>
+      <p class="sub">
+        บ้านของคุณอยู่ซ้ายมือ หว่านตามเข็มนาฬิกา แถวล่างเป็นของคุณ
+      </p>
+      <div class="ctl">
+        <label
+          >โหมด<select id="mode">
+            <option value="1">เล่นกับคอม</option>
+            <option value="2">2 ผู้เล่น (สลับตา)</option>
+            <option value="3">เดินพร้อมกัน (เลือกหลุมให้ทั้งสองฝ่าย)</option>
+          </select></label
+        >
+        <label id="lvlw"
+          >ระดับคอม<select id="lvl">
+            <option value="0">สุ่ม</option>
+            <option value="1" selected>ฉลาดขึ้น</option>
+          </select></label
+        >
+        <label
+          >หลุมต่อฝั่ง (n)<input
+            id="n"
+            type="number"
+            min="3"
+            max="30"
+            value="7"
+        /></label>
+        <label
+          >ลูกต่อหลุม (m)<input id="m" type="number" min="1" max="30" value="7"
+        /></label>
+        <label
+          >ความเร็ว<select id="spd">
+            <option value="260">ช้า</option>
+            <option value="110" selected>ปกติ</option>
+            <option value="25">เร็ว</option>
+          </select></label
+        >
+        <button id="go">เริ่มเกมใหม่</button>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+      <button id="startbtn" hidden disabled>เริ่มเล่น</button>
+      <div id="cnt" class="cnt"></div>
+      <div class="wrap"><div id="board"></div></div>
+      <details>
+        <summary>กติกาที่ใช้</summary>
+        โหมดเดินพร้อมกัน: ใช้เฉพาะรอบแรก ทั้งสองฝ่ายเลือกหลุมแล้วเดินพร้อมกัน
+        ฝ่ายที่จบตาก่อนต้องรอ ฝ่ายที่ยังเดินอยู่เดินต่อจนจบ
+        แล้วฝ่ายที่จบก่อนเริ่มตาถัดไป หลังจากนั้นสลับตากันตามปกติ
+        ถ้าจบพร้อมกันพอดีให้เลือกหลุมพร้อมกันใหม่<br />
+        หยิบลูกทั้งหมดในหลุมของฝั่งตนแล้วหว่านทีละลูกตามเข็มนาฬิกา
+        ผ่านบ้านตนเองใส่ 1 ลูก ผ่านบ้านฝั่งตรงข้ามข้าม ถ้าลูกสุดท้ายตกบ้านตนเอง
+        ได้เลือกหยิบหลุมใหม่ต่อ ถ้าตกหลุมที่มีลูก (ฝั่งใดก็ได้)
+        ให้หยิบทั้งหมดรวมลูกสุดท้ายแล้วหว่านต่อ ถ้าตกหลุมว่างฝั่งตรงข้าม ตาจบ
+        ถ้าตกหลุมว่างฝั่งตนและหลุมตรงข้ามมีลูก
+        ให้กินลูกทั้งหมดนั้นพร้อมลูกสุดท้ายเข้าบ้าน แล้วตาจบ
+        ถ้าหลุมตรงข้ามว่างก็จบตา เมื่อถึงตาใครแล้วหลุมเล็กฝั่งตนไม่มีลูก เกมจบ
+        ลูกที่เหลือเป็นของเจ้าของฝั่งนั้น ใครมีมากกว่าครึ่งชนะ
+      </details>
+    </main>
+    <script>
+      const $ = (s) => document.querySelector(s),
+        sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      let K,
+        S,
+        R,
+        b,
+        turn,
+        gid = 0,
+        pend = null,
+        sim = null,
+        cnt = [
+          { t: 0, a: 0 },
+          { t: 0, a: 0 },
+        ],
+        els = [],
+        cache = [],
+        mode,
+        lvl,
+        delay;
+      const lo = (p) => (p ? K + 1 : 0),
+        ST = (p) => (p ? 2 * K + 1 : K),
+        SK = (p) => (p ? K : 2 * K + 1);
+      const mine = (p) => {
+        const a = [];
+        for (let i = lo(p); i < lo(p) + K; i++) a.push(i);
+        return a;
+      };
+      const name = (p) =>
+        mode == 3
+          ? p
+            ? "ฝั่งตรงข้าม (บน)"
+            : "ฝั่งเรา (ล่าง)"
+          : mode == 2
+            ? "ผู้เล่น " + (p + 1)
+            : p
+              ? "คอม"
+              : "คุณ";
+      function* hand(b, p, pit) {
+        let pos = pit,
+          n = b[pos],
+          g = 0;
+        b[pos] = 0;
+        yield { t: "pick", pos, n };
+        for (;;) {
+          while (n > 0) {
+            pos = (pos + 1) % R;
+            if (pos === SK(p)) continue;
+            b[pos]++;
+            n--;
+            yield { t: "drop", pos, n };
+          }
+          if (++g > 3000) return "end";
+          if (pos === ST(p)) return "again";
+          if (b[pos] > 1) {
+            n = b[pos];
+            b[pos] = 0;
+            yield { t: "pick", pos, n };
+            continue;
+          }
+          if (pos >= lo(p) && pos < lo(p) + K) {
+            const o = 2 * K - pos;
+            if (b[o] > 0) {
+              b[ST(p)] += b[o] + b[pos];
+              b[o] = b[pos] = 0;
+              yield { t: "cap", pos, n: 0 };
+            }
+          }
+          return "end";
+        }
+      }
+      function run(bb, p, pit) {
+        const g = hand(bb, p, pit);
+        let r;
+        do {
+          r = g.next();
+        } while (!r.done);
+        return r.value;
+      }
+      function build() {
+        R = 2 * K + 2;
+        b = Array(R).fill(S);
+        b[K] = b[2 * K + 1] = 0;
+        const bd = $("#board");
+        bd.innerHTML = "";
+        bd.style.setProperty("--n", K);
+        bd.style.gridTemplateColumns = `1.2fr repeat(${K},1fr) 1.2fr`;
+        bd.style.minWidth = (K + 2) * 38 + "px";
+        els = [];
+        cache = [];
+        for (let i = 0; i < R; i++) {
+          const d = document.createElement("div"),
+            isS = i === K || i === 2 * K + 1,
+            p = i > K ? 1 : 0;
+          d.className = isS ? "store" : "pit";
+          if (isS) {
+            d.style.gridRow = "1/3";
+            d.style.gridColumn = i === K ? 1 : K + 2;
+            d.innerHTML = `<i>บ้าน ${i === K ? 1 : 2}</i>`;
+          } else {
+            d.style.gridRow = p ? 1 : 2;
+            d.style.gridColumn = p ? 2 + (i - K - 1) : 2 + (K - 1 - i);
+            d.innerHTML = `<i>${p ? 2 * K + 1 - i : K - i}</i>`;
+            d.tabIndex = 0;
+            d.onclick = () => click(i);
+            d.onkeydown = (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                click(i);
+              }
+            };
+          }
+          els[i] = d;
+          bd.append(d);
+        }
+      }
+      function render(h) {
+        for (let i = 0; i < R; i++) {
+          const d = els[i],
+            v = b[i];
+          if (cache[i] !== v) {
+            cache[i] = v;
+            const isS = i === K || i === 2 * K + 1,
+              cap = isS ? 36 : 14;
+            let s = "";
+            for (let k = 0; k < Math.min(v, cap); k++) s += "<s></s>";
+            d.querySelectorAll("s,b").forEach((x) => x.remove());
+            d.insertAdjacentHTML("beforeend", s + `<b>${v}</b>`);
+          }
+          d.classList.toggle("hl", [].concat(h).includes(i));
+        }
+      }
+      const mark = (c) =>
+        els.forEach((e, i) => e.classList.toggle("ok", c.includes(i)));
+      function click(i) {
+        if (sim) {
+          const p = i > K ? 1 : 0;
+          if (sim.need.includes(p) && b[i] > 0 && (mode != 4 || p == 0)) {
+            sim.pick[p] = i;
+            sim.show();
+          }
+          return;
+        }
+        if (pend && pend.c.includes(i)) {
+          const r = pend.r;
+          pend = null;
+          mark([]);
+          r(i);
+        }
+      }
+      const human = (c) =>
+        new Promise((r) => {
+          pend = { c, r };
+          mark(c);
+        });
+      const setS = (t, w) => {
+        const s = $("#status");
+        s.textContent = t;
+        s.className = w ? "win" : "";
+      };
+      function ai(p, c) {
+        if (lvl == 0) return c[(Math.random() * c.length) | 0];
+        let best = -1e9,
+          pick = [];
+        for (const i of c) {
+          const t = b.slice(),
+            r = run(t, p, i),
+            q = 1 - p;
+          const sc =
+            t[ST(p)] -
+            b[ST(p)] -
+            (t[ST(q)] - b[ST(q)]) +
+            (r === "again" ? 1.5 : 0);
+          if (sc > best) {
+            best = sc;
+            pick = [i];
+          } else if (sc === best) pick.push(i);
+        }
+        return pick[(Math.random() * pick.length) | 0];
+      }
+      async function takeTurn(p, id) {
+        cnt[p].t = 0;
+        updCnt();
+        for (;;) {
+          const c = mine(p).filter((i) => b[i] > 0);
+          if (!c.length) return;
+          let pit;
+          if (mode >= 2 || p == 0) {
+            setS(name(p) + ": เลือกหลุมที่จะหยิบ");
+            pit = await human(c);
+          } else {
+            setS("คอมกำลังคิด…");
+            await sleep(500);
+            pit = ai(p, c);
+          }
+          if (id !== gid) return;
+          const g = hand(b, p, pit);
+          let r;
+          while (!(r = g.next()).done) {
+            const e = r.value;
+            if (e.t === "drop") inc(p);
+            render(e.pos);
+            setS(
+              `${name(p)} กำลังหว่าน ในมือเหลือ ${e.n} ลูก` +
+                (e.t === "cap" ? " กินลูกได้!" : ""),
+            );
+            await sleep(e.t === "drop" ? delay : delay * 2);
+            if (id !== gid) return;
+          }
+          if (r.value !== "again") return;
+          render(-1);
+        }
+      }
+      async function play(id) {
+        while (id === gid) {
+          const p = turn;
+          if (!mine(p).some((i) => b[i] > 0)) {
+            end(p);
+            return;
+          }
+          await takeTurn(p, id);
+          if (id !== gid) return;
+          turn = 1 - turn;
+          render(-1);
+        }
+      }
+      function end(p) {
+        const q = 1 - p;
+        mine(q).forEach((i) => {
+          b[ST(q)] += b[i];
+          b[i] = 0;
+        });
+        result();
+      }
+      function result() {
+        render(-1);
+        const x = b[K],
+          y = b[2 * K + 1];
+        setS(
+          x > y
+            ? `${name(0)}ชนะ ${x} ต่อ ${y}`
+            : y > x
+              ? `${name(1)}ชนะ ${y} ต่อ ${x}`
+              : `เสมอ ${x} ต่อ ${y}`,
+          true,
+        );
+      }
+      const cand = (p) => mine(p).filter((i) => b[i] > 0);
+      const updCnt = () => {
+        $("#cnt").textContent = [0, 1]
+          .map(
+            (p) =>
+              `${name(p)}: เดินแล้ว ${cnt[p].t} หลุม (ทั้งเกม ${cnt[p].a})`,
+          )
+          .join("   |   ");
+      };
+      const inc = (p) => {
+        cnt[p].t++;
+        cnt[p].a++;
+        updCnt();
+      };
+      const sb = () => $("#startbtn");
+      const clr = () => {
+        mark([]);
+        els.forEach((e) => e.classList.remove("sel"));
+        sb().hidden = true;
+        sb().disabled = true;
+      };
+      function simAsk(needs, solo) {
+        return new Promise((r) => {
+          const s = (sim = { need: needs, pick: [null, null], r });
+          const hum = needs.filter((p) => !(mode == 4 && p == 1));
+          if (mode == 4 && needs.includes(1)) s.pick[1] = ai(1, cand(1));
+          s.show = () => {
+            const ready = needs.every((p) => s.pick[p] !== null);
+            mark(hum.flatMap(cand));
+            els.forEach((e, i) =>
+              e.classList.toggle(
+                "sel",
+                hum.some((p) => s.pick[p] === i),
+              ),
+            );
+            setS(
+              needs
+                .map(
+                  (p) =>
+                    `${name(p)}: ${s.pick[p] === null ? "รอเลือกหลุม" : "เลือกแล้ว ✓"}`,
+                )
+                .join("   |   ") +
+                (ready && hum.length ? '   — กด "เริ่มเล่น"' : ""),
+            );
+            sb().hidden = !hum.length || !!solo;
+            sb().disabled = !ready;
+            if (ready && (!hum.length || solo)) s.go();
+          };
+          s.go = () => {
+            if (!needs.every((p) => s.pick[p] !== null)) return;
+            sim = null;
+            clr();
+            r(s.pick);
+          };
+          s.show();
+        });
+      }
+      async function playSim(id) {
+        while (id === gid) {
+          const has = [0, 1].map((p) => cand(p).length > 0);
+          if (!has[0] || !has[1]) {
+            [0, 1].forEach((p) => {
+              if (!has[p]) {
+                const q = 1 - p;
+                mine(q).forEach((i) => {
+                  b[ST(q)] += b[i];
+                  b[i] = 0;
+                });
+              }
+            });
+            result();
+            return;
+          }
+          const pk = await simAsk([0, 1]);
+          if (id !== gid) return;
+          const H = [
+              { n: 0, pos: 0, s: "idle" },
+              { n: 0, pos: 0, s: "idle" },
+            ],
+            fin = [null, null];
+          let tick = 0;
+          const pickup = (p, i) => {
+            H[p].n = b[i];
+            b[i] = 0;
+            H[p].pos = i;
+            H[p].s = H[p].n > 0 ? "sow" : "done";
+          };
+          cnt[0].t = cnt[1].t = 0;
+          updCnt();
+          pickup(0, pk[0]);
+          pickup(1, pk[1]);
+          render(-1);
+          await sleep(delay * 2);
+          for (
+            let g = 0;
+            [0, 1].some((p) => H[p].s !== "done") && g < 20000;
+            g++
+          ) {
+            if (id !== gid) return;
+            [0, 1].forEach((p) => {
+              if (H[p].s === "done" && fin[p] === null) fin[p] = tick;
+            });
+            const need = [0, 1].filter((p) => H[p].s === "choose");
+            if (need.length) {
+              const cs = need.filter((p) => cand(p).length > 0);
+              need.forEach((p) => {
+                if (!cs.includes(p)) H[p].s = "done";
+              });
+              if (cs.length) {
+                const r = await simAsk(cs, cs.length === 1);
+                if (id !== gid) return;
+                cs.forEach((p) => pickup(p, r[p]));
+              }
+              render(-1);
+              continue;
+            }
+            const act = [0, 1].filter((p) => H[p].s === "sow");
+            act.forEach((p) => {
+              let q = (H[p].pos + 1) % R;
+              if (q === SK(p)) q = (q + 1) % R;
+              H[p].pos = q;
+              b[q]++;
+              H[p].n--;
+              inc(p);
+            });
+            tick++;
+            render(act.map((p) => H[p].pos));
+            setS(
+              [0, 1]
+                .map(
+                  (p) =>
+                    `${name(p)}: ${H[p].s === "sow" ? "ในมือเหลือ " + H[p].n : H[p].s === "done" ? "จบตา" : "รอเลือก"}`,
+                )
+                .join("   |   "),
+            );
+            await sleep(delay);
+            if (id !== gid) return;
+            const occ = act.map((p) => b[H[p].pos] > 1);
+            act.forEach((p, k) => {
+              if (H[p].n > 0) return;
+              const pos = H[p].pos;
+              if (pos === ST(p)) H[p].s = "choose";
+              else if (occ[k]) pickup(p, pos);
+              else {
+                if (pos >= lo(p) && pos < lo(p) + K) {
+                  const o = 2 * K - pos;
+                  if (b[o] > 0) {
+                    b[ST(p)] += b[o] + b[pos];
+                    b[o] = b[pos] = 0;
+                  }
+                }
+                H[p].s = "done";
+              }
+            });
+          }
+          [0, 1].forEach((p) => {
+            if (fin[p] === null) fin[p] = tick;
+          });
+          render(-1);
+          if (fin[0] === fin[1]) {
+            setS("จบพร้อมกัน เริ่มรอบเลือกหลุมพร้อมกันใหม่");
+            await sleep(900);
+            continue;
+          }
+          turn = fin[0] < fin[1] ? 0 : 1;
+          setS(
+            `${name(turn)} จบตาก่อน เมื่อ${name(1 - turn)}จบตาแล้ว ${name(turn)}จึงเริ่มเดินต่อ`,
+          );
+          await sleep(1200);
+          if (id !== gid) return;
+          play(id);
+          return;
+        }
+      }
+      function start() {
+        K = Math.max(3, Math.min(30, +$("#n").value || 7));
+        S = Math.max(1, Math.min(30, +$("#m").value || 7));
+        $("#n").value = K;
+        $("#m").value = S;
+        gid++;
+        if (pend) {
+          const r = pend.r;
+          pend = null;
+          r(-1);
+        }
+        if (sim) {
+          const r = sim.r;
+          sim = null;
+          r([null, null]);
+        }
+        clr();
+        mark([]);
+        mode = +$("#mode").value;
+        lvl = +$("#lvl").value;
+        delay = +$("#spd").value;
+        cnt = [
+          { t: 0, a: 0 },
+          { t: 0, a: 0 },
+        ];
+        updCnt();
+        build();
+        turn = 0;
+        render(-1);
+        mode >= 3 ? playSim(gid) : play(gid);
+      }
+      $("#go").onclick = start;
+      $("#startbtn").onclick = () => {
+        if (sim) sim.go();
+      };
+      $("#mode").onchange = () => {
+        $("#lvlw").style.display = $("#mode").value === "1" ? "" : "none";
+      };
+      start();
+    </script>
+  </body>
+</html>
